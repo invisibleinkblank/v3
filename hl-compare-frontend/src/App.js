@@ -39,41 +39,161 @@ const categories = [
   { key: 'portfolio_recommendation', name: 'Portfolio Recommendation', icon: '📋' }
 ];
 
-// Accordion component for collapsible analysis
-function Accordion({ items }) {
+// Add this after categories definition
+const categoryMetrics = {
+  valuation_metrics: [
+    { key: 'Sector', label: 'Sector' },
+    { key: 'Current Price', label: 'Current Price' },
+    { key: 'Market Cap', label: 'Market Cap' },
+    { key: 'P/E Ratio', label: 'P/E Ratio' },
+    { key: 'Dividend Yield', label: 'Dividend Yield' },
+    { key: '52 Week High', label: '52 Week High' },
+    { key: '52 Week Low', label: '52 Week Low' },
+  ],
+  financial_performance: [
+    { key: 'Revenue', label: 'Revenue' },
+    { key: 'Net Income', label: 'Net Income' },
+    { key: 'EPS', label: 'EPS' },
+    { key: 'Operating Margin', label: 'Operating Margin' },
+    { key: 'Free Cash Flow', label: 'Free Cash Flow' },
+    { key: 'Total Return (Trailing 12M)', label: 'Total Return (Trailing 12M)' },
+    { key: 'Total Return (5 Years)', label: 'Total Return (5 Years)' },
+    { key: 'Current Ratio', label: 'Current Ratio' },
+  ],
+  competitive_position: [
+    { key: 'Market Share', label: 'Market Share' },
+    { key: 'Key Competitors', label: 'Key Competitors' },
+    { key: 'Moat Strength', label: 'Moat Strength' },
+    { key: 'Brand Value', label: 'Brand Value' },
+  ],
+  risk_factors: [
+    { key: 'Regulatory Risk', label: 'Regulatory Risk' },
+    { key: 'Supply Chain Risk', label: 'Supply Chain Risk' },
+    { key: 'Market Volatility', label: 'Market Volatility' },
+    { key: 'Litigation Risk', label: 'Litigation Risk' },
+  ],
+  growth_drivers: [
+    { key: 'R&D Spend', label: 'R&D Spend' },
+    { key: 'New Markets', label: 'New Markets' },
+    { key: 'Product Pipeline', label: 'Product Pipeline' },
+    { key: 'User Growth', label: 'User Growth' },
+  ],
+  macro_context: [
+    { key: 'GDP Exposure', label: 'GDP Exposure' },
+    { key: 'FX Sensitivity', label: 'FX Sensitivity' },
+    { key: 'Interest Rate Sensitivity', label: 'Interest Rate Sensitivity' },
+    { key: 'Inflation Impact', label: 'Inflation Impact' },
+  ],
+  esg_factors: [
+    { key: 'Carbon Footprint', label: 'Carbon Footprint' },
+    { key: 'Board Diversity', label: 'Board Diversity' },
+    { key: 'ESG Rating', label: 'ESG Rating' },
+    { key: 'Sustainability Initiatives', label: 'Sustainability Initiatives' },
+  ],
+  management_quality: [
+    { key: 'CEO Tenure', label: 'CEO Tenure' },
+    { key: 'Management Score', label: 'Management Score' },
+    { key: 'Insider Ownership', label: 'Insider Ownership' },
+    { key: 'Succession Plan', label: 'Succession Plan' },
+  ],
+  portfolio_recommendation: [
+    { key: 'Portfolio Fit', label: 'Portfolio Fit' },
+    { key: 'Risk Level', label: 'Risk Level' },
+    { key: 'Suggested Allocation', label: 'Suggested Allocation' },
+    { key: 'Investment Horizon', label: 'Investment Horizon' },
+  ],
+};
+
+// Refactor Accordion to accept entities, results, and formatMetricValue as props
+function Accordion({ items, entities, results, formatMetricValue }) {
   const [openIndex, setOpenIndex] = useState(null);
   return (
     <div className="accordion">
       {items.map((item, idx) => (
-        <div key={item.key} className="accordion-item">
+        <div className="accordion-item" key={item.key}>
           <button
             className="accordion-header"
             onClick={() => setOpenIndex(openIndex === idx ? null : idx)}
+            aria-expanded={openIndex === idx}
           >
             <span className="category-icon">{item.icon}</span>
             <span className="category-title">{item.name}</span>
-            <span className="confidence-badge" style={{ backgroundColor: item.confidenceColor }}>{item.confidence}%</span>
             <span className="accordion-arrow">{openIndex === idx ? '▲' : '▼'}</span>
           </button>
           {openIndex === idx && (
             <div className="accordion-content">
-              <div className="entity-comparison">
-                <div className="entity-column">
-                  <div className="entity-header">
-                    <h4>{item.entityA}</h4>
-                  </div>
-                  <div className="analysis-content">
-                    <div dangerouslySetInnerHTML={{ __html: item.analysisA || 'No analysis available' }} />
-                  </div>
+              {/* Show metrics table if available */}
+              {item.metrics && item.metrics.length > 0 && (
+                <table className="key-metrics-table">
+                  <thead>
+                    <tr>
+                      <th>Metric</th>
+                      {entities.map(entity => (
+                        <th key={entity}>{entity}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {item.metrics.map(({ key, label }) => (
+                      <tr key={key}>
+                        <td style={{ fontWeight: 600, position: 'relative' }}>
+                          <span className="metric-label has-definition" tabIndex={0}>
+                            {label}
+                            {/* Tooltip for metric definition */}
+                            <span className="info-icon" tabIndex={-1} style={{ background: 'none', boxShadow: 'none', width: 18, height: 18, marginLeft: 6, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1976d2" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                              <span className="metric-tooltip">
+                                {(() => {
+                                  // Try to get definition from first entity's key_facts
+                                  const def = results[item.key]?.[entities[0].toLowerCase().trim()]?.key_facts?.[key]?.definition;
+                                  return def || 'No definition available.';
+                                })()}
+                              </span>
+                            </span>
+                          </span>
+                        </td>
+                        {entities.map(entity => {
+                          const valueObj = results[item.key]?.[entity.toLowerCase().trim()]?.key_facts?.[key];
+                          return (
+                            <td key={entity}>
+                              {valueObj && valueObj.value !== undefined && valueObj.value !== null
+                                ? formatMetricValue(key, valueObj.value)
+                                : '-'}
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+              {/* Show analysis text if present (e.g., Investment Thesis) */}
+              {item.showAnalysis && (
+                <div style={{ display: 'flex', gap: '2rem', marginTop: 24 }}>
+                  {entities.map(entity => {
+                    const thesisFacts = results[item.key]?.[entity.toLowerCase().trim()]?.key_facts || {};
+                    return (
+                      <div key={entity} style={{ flex: 1, background: '#f8fafc', borderRadius: 12, padding: 24, minHeight: 80, boxShadow: '0 1px 4px rgba(102,126,234,0.06)' }}>
+                        <div style={{ fontWeight: 700, fontSize: 18, color: '#374151', marginBottom: 8 }}>{entity}</div>
+                        <div style={{ fontSize: 16, color: '#374151', marginBottom: 12 }}>{thesisFacts.analysis || 'No analysis available.'}</div>
+                        <div style={{ fontSize: 14, color: '#64748b' }}>Confidence: <span style={{ fontWeight: 600 }}>{thesisFacts.confidence !== undefined ? thesisFacts.confidence + '%' : '-'}</span></div>
+                      </div>
+                    );
+                  })}
                 </div>
-                <div className="entity-column">
-                  <div className="entity-header">
-                    <h4>{item.entityB}</h4>
-                  </div>
-                  <div className="analysis-content">
-                    <div dangerouslySetInnerHTML={{ __html: item.analysisB || 'No analysis available' }} />
-                  </div>
-                </div>
+              )}
+              {/* Deeper Insight/Conclusion paragraph - now always uses backend conclusion if present */}
+              <div style={{
+                marginTop: 32,
+                background: '#e0e7ff',
+                borderRadius: 10,
+                padding: 20,
+                fontSize: 17,
+                color: '#1e293b',
+                fontStyle: 'italic',
+                boxShadow: '0 2px 8px rgba(102,126,234,0.08)'
+              }}>
+                <b>Deeper Insight:</b> {results[item.key]?.conclusion || 'This is where a summary or key takeaway for this category will appear.'}
               </div>
             </div>
           )}
@@ -136,8 +256,7 @@ function EvidenceSidebar({ open, onClose, evidence }) {
 }
 
 function App() {
-  const [entityA, setEntityA] = useState('');
-  const [entityB, setEntityB] = useState('');
+  const [entities, setEntities] = useState(['', '']);
   const [query, setQuery] = useState('');
   const [files, setFiles] = useState([]);
   const [results, setResults] = useState(null);
@@ -149,23 +268,38 @@ function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarEvidence, setSidebarEvidence] = useState(null);
 
-  // Define entity keys at the top so they're available everywhere
-  const entityAKey = entityA.toLowerCase().trim();
-  const entityBKey = entityB.toLowerCase().trim();
-
   // Add a ref for the analysis section
   const analysisRef = React.useRef(null);
   const reportRef = React.useRef(null);
+
+  const handleEntityChange = (idx, value) => {
+    const updated = [...entities];
+    updated[idx] = value;
+    setEntities(updated);
+  };
+
+  const addEntity = () => {
+    setEntities([...entities, '']);
+  };
+
+  const removeEntity = (idx) => {
+    if (entities.length <= 2) return; // Always keep at least 2
+    setEntities(entities.filter((_, i) => i !== idx));
+  };
 
   const handleFileChange = (e) => {
     const selectedFiles = Array.from(e.target.files);
     setFiles(selectedFiles);
   };
 
+  // Add a helper to check if all entity fields are filled
+  const allEntitiesFilled = entities.every(e => e.trim() !== '');
+  const canSubmit = allEntitiesFilled && files.length > 0;
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!files.length || !entityA || !entityB) {
-      setError('Please provide all required fields');
+    if (!canSubmit) {
+      setError('Please fill in all entity fields and upload at least one document.');
       return;
     }
 
@@ -177,8 +311,7 @@ function App() {
       files.forEach(file => {
         formData.append('files', file);
       });
-      formData.append('entityA', entityA);
-      formData.append('entityB', entityB);
+      formData.append('entities', entities.join(','));
       formData.append('query', query);
 
       const response = await fetch('http://localhost:8000/compare/', {
@@ -194,8 +327,12 @@ function App() {
       setResults({
         ...data.comparison,
         documents_analyzed: data.documents_analyzed,
-        entityA: data.entityA,
-        entityB: data.entityB
+        entities: data.entities
+      });
+      console.log('Set results to:', {
+        ...data.comparison,
+        documents_analyzed: data.documents_analyzed,
+        entities: data.entities
       });
     } catch (err) {
       setError(`Error: ${err.message}. Please ensure the backend is running and reachable at http://localhost:8000.`);
@@ -209,8 +346,8 @@ function App() {
     
     const chartData = categories.map(cat => ({
       category: cat.name,
-      entityA: data[cat.key]?.[entityAKey]?.confidence || 0,
-      entityB: data[cat.key]?.[entityBKey]?.confidence || 0,
+      entityA: data[cat.key]?.[entities[0].toLowerCase().trim()]?.confidence || 0,
+      entityB: data[cat.key]?.[entities[1].toLowerCase().trim()]?.confidence || 0,
       icon: cat.icon
     }));
 
@@ -226,7 +363,7 @@ function App() {
               </div>
               <div className="chart-bars">
                 <div className="bar-container">
-                  <div className="bar-label">{entityA}</div>
+                  <div className="bar-label">{entities[0]}</div>
                   <div className="progress-bar">
                     <div 
                       className="progress-fill entity-a"
@@ -239,7 +376,7 @@ function App() {
                   <span className="percentage">{item.entityA}%</span>
                 </div>
                 <div className="bar-container">
-                  <div className="bar-label">{entityB}</div>
+                  <div className="bar-label">{entities[1]}</div>
                   <div className="progress-bar">
                     <div 
                       className="progress-fill entity-b"
@@ -417,8 +554,8 @@ function App() {
   // Helper to get key facts and evidence for a category
   const getKeyFactsTableData = (cat) => {
     if (!results) return { metrics: [] };
-    const a = results[cat.key]?.[entityAKey] || {};
-    const b = results[cat.key]?.[entityBKey] || {};
+    const a = results[cat.key]?.[entities[0].toLowerCase().trim()] || {};
+    const b = results[cat.key]?.[entities[1].toLowerCase().trim()] || {};
     const aFacts = a.key_facts || {};
     const bFacts = b.key_facts || {};
     // Union of all metric keys
@@ -488,49 +625,112 @@ function App() {
     </svg>
   );
 
-  // Key Metrics Table component
+  const referenceMetrics = [
+    { key: 'sector', label: 'Sector', defaultDefinition: 'The industry sector in which the company operates.' },
+    { key: 'current_price', label: 'Current Price', defaultDefinition: 'The latest trading price of the company\'s stock.' },
+    { key: 'market_cap', label: 'Market Cap', defaultDefinition: 'The total market value of a company\'s outstanding shares.' },
+    { key: '52_week_high', label: '52 Week High', defaultDefinition: 'The highest price at which the stock traded in the last 52 weeks.' },
+    { key: '52_week_low', label: '52 Week Low', defaultDefinition: 'The lowest price at which the stock traded in the last 52 weeks.' },
+    { key: 'dividend_yield', label: 'Dividend Yield', defaultDefinition: 'A financial ratio that shows how much a company pays out in dividends each year relative to its stock price.' },
+    { key: 'volume', label: 'Volume', defaultDefinition: 'The number of shares traded during a given period.' },
+    { key: 'total_return_12m', label: 'Total Return (Trailing 12M)', defaultDefinition: 'The total return of the stock over the last 12 months, including dividends.' },
+    { key: 'total_return_5y', label: 'Total Return (5 Years)', defaultDefinition: 'The total return of the stock over the last 5 years, including dividends.' },
+    { key: 'pe_ratio', label: 'P/E Ratio', defaultDefinition: 'Price-to-Earnings Ratio: A valuation ratio of a company\'s current share price compared to its per-share earnings.' },
+    { key: 'current_ratio', label: 'Current Ratio', defaultDefinition: 'A liquidity ratio that measures a company\'s ability to pay short-term obligations.' },
+  ];
+
+  function formatMetricValue(key, value) {
+    if (value === undefined || value === null || value === '') return '-';
+    if ([
+      'current_price', 'market_cap', '52_week_high', '52_week_low'
+    ].includes(key)) {
+      // Currency formatting
+      if (typeof value === 'string' && value.startsWith('$')) return value;
+      if (key === 'market_cap') {
+        // Format trillions/billions/millions
+        const n = Number(value);
+        if (n >= 1e12) return `$${(n / 1e12).toFixed(2)}T`;
+        if (n >= 1e9) return `$${(n / 1e9).toFixed(2)}B`;
+        if (n >= 1e6) return `$${(n / 1e6).toFixed(2)}M`;
+        return `$${n.toLocaleString()}`;
+      }
+      return `$${Number(value).toLocaleString()}`;
+    }
+    if ([
+      'dividend_yield', 'total_return_12m', 'total_return_5y'
+    ].includes(key)) {
+      // Percent formatting
+      if (typeof value === 'string' && value.endsWith('%')) return value;
+      return `${Number(value).toFixed(2)}%`;
+    }
+    if (key === 'volume') {
+      // Large number formatting
+      const n = Number(value);
+      if (n >= 1e6) return `${(n / 1e6).toFixed(2)}M`;
+      if (n >= 1e3) return `${(n / 1e3).toFixed(2)}K`;
+      return n.toLocaleString();
+    }
+    return value;
+  }
+
   const KeyMetricsTable = ({ cat }) => {
-    const { metrics } = getKeyFactsTableData(cat);
-    if (!metrics.length) return <div style={{ color: '#888', padding: 24 }}>No key metrics available for this category.</div>;
+    if (!results) return null;
+    if (cat.key === 'investment_thesis') {
+      // Render analysis and confidence for each entity, reading from .key_facts.analysis and .key_facts.confidence
+      return (
+        <div style={{ display: 'flex', gap: '2rem', justifyContent: 'flex-start', margin: '2rem 0' }}>
+          {entities.map(entity => {
+            const thesisFacts = results[cat.key]?.[entity.toLowerCase().trim()]?.key_facts || {};
+            return (
+              <div key={entity} style={{ flex: 1, background: '#f8fafc', borderRadius: 12, padding: 24, minHeight: 120, boxShadow: '0 1px 4px rgba(102,126,234,0.06)' }}>
+                <div style={{ fontWeight: 700, fontSize: 18, color: '#374151', marginBottom: 8 }}>{entity}</div>
+                <div style={{ fontSize: 16, color: '#374151', marginBottom: 12 }}>{thesisFacts.analysis || 'No analysis available.'}</div>
+                <div style={{ fontSize: 14, color: '#64748b' }}>Confidence: <span style={{ fontWeight: 600 }}>{thesisFacts.confidence !== undefined ? thesisFacts.confidence + '%' : '-'}</span></div>
+              </div>
+            );
+          })}
+        </div>
+      );
+    }
+    const entityFacts = entities.map(entity => ({
+      entity,
+      facts: results[cat.key]?.[entity.toLowerCase().trim()]?.key_facts || {},
+    }));
+    const metricsToShow = categoryMetrics[cat.key] || [];
     return (
       <table className="key-metrics-table">
         <thead>
           <tr>
             <th>Metric</th>
-            <th>{entityA}</th>
-            <th>{entityB}</th>
+            {entities.map(entity => (
+              <th key={entity}>{entity}</th>
+            ))}
           </tr>
         </thead>
         <tbody>
-          {metrics.map(({ key, aValue, bValue, aEvidence, bEvidence }) => {
-            const winner = isWinner(key, aValue?.value, bValue?.value);
-            const definition = metricDefinitions[key];
-            return (
-              <tr key={key}>
-                <td style={{ fontWeight: 600 }}>
-                  <span className={`metric-label${definition ? ' has-definition' : ''}`} tabIndex={0}>
-                    {prettifyLabelWithUnit(key)}
-                    {definition && (
-                      <span className="info-icon" tabIndex={-1} style={{ background: 'none', boxShadow: 'none', width: 18, height: 18, marginLeft: 6, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
-                        <InfoCircleIcon size={18} color="#1976d2" />
-                        <span className="metric-tooltip">{definition}</span>
-                      </span>
-                    )}
+          {metricsToShow.map(({ key, label }) => (
+            <tr key={key}>
+              <td style={{ fontWeight: 600 }}>
+                <span className="metric-label has-definition" tabIndex={0}>
+                  {label}
+                  <span className="info-icon" tabIndex={-1} style={{ background: 'none', boxShadow: 'none', width: 18, height: 18, marginLeft: 6, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+                    <InfoCircleIcon size={18} color="#1976d2" />
+                    <span className="metric-tooltip">{entityFacts[0].facts[key]?.definition || ''}</span>
                   </span>
-                </td>
-                <td className={winner === 'a' ? 'winner-cell' : ''}>
-                  {aValue && aValue.value !== undefined && aValue.value !== null ? aValue.value : '-'}{' '}
-                  {winner === 'a' && <span className="winner-check">✔️</span>}
-                  <EvidenceBadge evidence={aValue?.evidence} value={aValue?.value} />
-                </td>
-                <td className={winner === 'b' ? 'winner-cell' : ''}>
-                  {bValue && bValue.value !== undefined && bValue.value !== null ? bValue.value : '-'}{' '}
-                  {winner === 'b' && <span className="winner-check">✔️</span>}
-                  <EvidenceBadge evidence={bValue?.evidence} value={bValue?.value} />
-                </td>
-              </tr>
-            );
-          })}
+                </span>
+              </td>
+              {entityFacts.map((e) => {
+                const valueObj = e.facts[key];
+                return (
+                  <td key={e.entity}>
+                    {valueObj && valueObj.value !== undefined && valueObj.value !== null
+                      ? formatMetricValue(key, valueObj.value)
+                      : '-'}
+                  </td>
+                );
+              })}
+            </tr>
+          ))}
         </tbody>
       </table>
     );
@@ -538,20 +738,23 @@ function App() {
 
   // Helper to build accordion items
   const getAccordionItems = () => {
-    if (!results) return [];
-    return categories.map((cat) => {
-      const a = results[cat.key]?.[entityAKey] || {};
-      const b = results[cat.key]?.[entityBKey] || {};
+    return categories.map(cat => {
+      // Compute average confidence for this category
+      let confidences = [];
+      entities.forEach(entity => {
+        const c = results?.[cat.key]?.[entity.toLowerCase().trim()]?.key_facts?.confidence;
+        if (typeof c === 'number') confidences.push(c);
+      });
+      const avgConfidence = confidences.length
+        ? Math.round(confidences.reduce((a, b) => a + b, 0) / confidences.length)
+        : undefined;
       return {
         key: cat.key,
         name: cat.name,
         icon: cat.icon,
-        confidence: a.confidence || 0,
-        confidenceColor: getConfidenceColor(a.confidence || 0),
-        entityA: entityA,
-        entityB: entityB,
-        analysisA: a.analysis,
-        analysisB: b.analysis,
+        metrics: categoryMetrics[cat.key] || [],
+        showAnalysis: cat.key === 'investment_thesis',
+        confidence: avgConfidence
       };
     });
   };
@@ -566,10 +769,119 @@ function App() {
     const pageWidth = pdf.internal.pageSize.getWidth();
     const pageHeight = pdf.internal.pageSize.getHeight();
 
+    // --- TITLE SLIDE ---
+    const titleDiv = document.createElement('div');
+    titleDiv.style.width = '1100px';
+    titleDiv.style.height = '600px';
+    titleDiv.style.display = 'flex';
+    titleDiv.style.flexDirection = 'column';
+    titleDiv.style.justifyContent = 'center';
+    titleDiv.style.alignItems = 'center';
+    titleDiv.style.background = '#fff';
+    titleDiv.style.fontFamily = 'Segoe UI, Arial, sans-serif';
+    titleDiv.style.fontSize = '32px';
+    titleDiv.innerHTML = `
+      <img src='/harding-loevner-logo.png' style='height:80px;margin-bottom:32px;' />
+      <div style='font-size:40px;font-weight:800;color:#1e293b;margin-bottom:24px;'>HL Compare: Analysis Report</div>
+      <div style='font-size:28px;color:#1976d2;margin-bottom:18px;'>${entities.map(capitalizeWords).join(' vs ')}</div>
+      <div style='font-size:20px;color:#64748b;margin-bottom:18px;'>Multi-Entity Financial & Strategic Comparison</div>
+      <div style='font-size:18px;color:#374151;margin-bottom:8px;'>${new Date().toLocaleDateString()}</div>
+      <div style='font-size:18px;color:#374151;'>${results.documents_analyzed || 0} documents analyzed</div>
+    `;
+    document.body.appendChild(titleDiv);
+    const titleCanvas = await html2canvas(titleDiv, { scale: 2 });
+    const titleImgData = titleCanvas.toDataURL('image/jpeg', 1.0);
+    const tImgWidth = titleCanvas.width;
+    const tImgHeight = titleCanvas.height;
+    const tRatio = Math.min(pageWidth / tImgWidth, pageHeight / tImgHeight);
+    const tPdfWidth = tImgWidth * tRatio;
+    const tPdfHeight = tImgHeight * tRatio;
+    const tX = (pageWidth - tPdfWidth) / 2;
+    const tY = (pageHeight - tPdfHeight) / 2;
+    pdf.addImage(titleImgData, 'JPEG', tX, tY, tPdfWidth, tPdfHeight);
+    document.body.removeChild(titleDiv);
+    pdf.addPage();
+    // --- END TITLE SLIDE ---
+
     for (let i = 0; i < categories.length; i++) {
       const cat = categories[i];
-      const a = results[cat.key]?.[entityAKey] || {};
-      const b = results[cat.key]?.[entityBKey] || {};
+      // Special handling for Investment Thesis slide
+      if (cat.key === 'investment_thesis') {
+        // Gather data for each entity
+        const thesisRows = ['Metric', 'Analysis', 'Confidence'];
+        const thesisData = entities.map(entity => {
+          const facts = (results[cat.key]?.[entity.toLowerCase().trim()]?.key_facts || {});
+          // Find first metric key (not analysis or confidence)
+          const metricKey = Object.keys(facts).find(k => k !== 'analysis' && k !== 'confidence');
+          return {
+            metric: metricKey ? (prettifyLabelWithUnit(metricKey) + ': ' + (facts[metricKey]?.value ?? '-')) : '-',
+            analysis: facts.analysis || '-',
+            confidence: (facts.confidence !== undefined && facts.confidence !== null) ? facts.confidence + '%' : '-'
+          };
+        });
+        // Build table HTML
+        const thesisTable = `
+          <table style='width:100%;border-collapse:collapse;margin-bottom:24px;font-size:20px;'>
+            <thead>
+              <tr>
+                <th style='text-align:left;border-bottom:2px solid #e5e7eb;padding:8px 12px;color:#374151;'> </th>
+                ${entities.map(entity => `<th style='text-align:left;border-bottom:2px solid #e5e7eb;padding:8px 12px;color:#374151;'>${capitalizeWords(entity)}</th>`).join('')}
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style='font-weight:600;padding:8px 12px;border-bottom:1px solid #e5e7eb;'>Metric</td>
+                ${thesisData.map(d => `<td style='padding:8px 12px;border-bottom:1px solid #e5e7eb;'>${d.metric}</td>`).join('')}
+              </tr>
+              <tr>
+                <td style='font-weight:600;padding:8px 12px;border-bottom:1px solid #e5e7eb;'>Analysis</td>
+                ${thesisData.map(d => `<td style='padding:8px 12px;border-bottom:1px solid #e5e7eb;'>${d.analysis}</td>`).join('')}
+              </tr>
+              <tr>
+                <td style='font-weight:600;padding:8px 12px;border-bottom:1px solid #e5e7eb;'>Confidence</td>
+                ${thesisData.map(d => `<td style='padding:8px 12px;border-bottom:1px solid #e5e7eb;'>${d.confidence}</td>`).join('')}
+              </tr>
+            </tbody>
+          </table>
+        `;
+        // Build the rest of the slide
+        const sectionDiv = document.createElement('div');
+        sectionDiv.style.width = '1100px';
+        sectionDiv.style.minHeight = '600px';
+        sectionDiv.style.padding = '48px 56px';
+        sectionDiv.style.background = '#fff';
+        sectionDiv.style.fontFamily = 'Segoe UI, Arial, sans-serif';
+        sectionDiv.style.fontSize = '20px';
+        sectionDiv.style.lineHeight = '1.6';
+        sectionDiv.innerHTML = `
+          <div style="display:flex;align-items:center;margin-bottom:32px;">
+            <img src='/harding-loevner-logo.png' style='height:56px;margin-right:32px;' />
+            <h1 style='margin:0;font-size:32px;'>HL Compare: Analysis Report</h1>
+          </div>
+          <div style='font-size:22px;color:#374151;margin-bottom:8px;'><b>Focus Area:</b> ${cat.icon} ${cat.name}</div>
+          <h2 style='color:#1976d2;font-size:26px;margin-bottom:16px;'>${entities.map(capitalizeWords).join(' vs ')}</h2>
+          ${thesisTable}
+          <div style='margin-top:24px;background:#e0e7ff;border-radius:10px;padding:20px;font-size:17px;color:#1e293b;font-style:italic;box-shadow:0 2px 8px rgba(102,126,234,0.08);'>
+            <b>Deeper Insight:</b> ${results[cat.key]?.conclusion || 'This is where a summary or key takeaway for this category will appear.'}
+          </div>
+        `;
+        document.body.appendChild(sectionDiv);
+        const canvas = await html2canvas(sectionDiv, { scale: 2 });
+        const imgData = canvas.toDataURL('image/jpeg', 1.0);
+        const imgWidth = canvas.width;
+        const imgHeight = canvas.height;
+        const ratio = Math.min(pageWidth / imgWidth, pageHeight / imgHeight);
+        const pdfWidth = imgWidth * ratio;
+        const pdfHeight = imgHeight * ratio;
+        const x = (pageWidth - pdfWidth) / 2;
+        const y = 0;
+        pdf.addImage(imgData, 'JPEG', x, y, pdfWidth, pdfHeight);
+        document.body.removeChild(sectionDiv);
+        if (i < categories.length - 1) pdf.addPage();
+        continue; // Skip normal rendering for this slide
+      }
+      const a = results[cat.key]?.[entities[0].toLowerCase().trim()] || {};
+      const b = results[cat.key]?.[entities[1].toLowerCase().trim()] || {};
       const aFacts = a.key_facts || {};
       const bFacts = b.key_facts || {};
       const metricKeys = Array.from(new Set([...Object.keys(aFacts), ...Object.keys(bFacts)]));
@@ -588,38 +900,29 @@ function App() {
           <img src='/harding-loevner-logo.png' style='height:56px;margin-right:32px;' />
           <h1 style='margin:0;font-size:32px;'>HL Compare: Analysis Report</h1>
         </div>
-        <h2 style='color:#1976d2;font-size:26px;margin-bottom:16px;'>${cat.icon} ${cat.name}</h2>
+        <div style='font-size:22px;color:#374151;margin-bottom:8px;'><b>Focus Area:</b> ${cat.icon} ${cat.name}</div>
+        <h2 style='color:#1976d2;font-size:26px;margin-bottom:16px;'>${entities.map(capitalizeWords).join(' vs ')}</h2>
         <table style='width:100%;border-collapse:collapse;margin-bottom:24px;font-size:20px;'>
           <thead>
             <tr>
               <th style='text-align:left;border-bottom:2px solid #e5e7eb;padding:8px 12px;color:#374151;'>Metric</th>
-              <th style='text-align:left;border-bottom:2px solid #e5e7eb;padding:8px 12px;color:#374151;'>${capitalizeWords(entityA)}</th>
-              <th style='text-align:left;border-bottom:2px solid #e5e7eb;padding:8px 12px;color:#374151;'>${capitalizeWords(entityB)}</th>
+              ${entities.map(entity => `<th style='text-align:left;border-bottom:2px solid #e5e7eb;padding:8px 12px;color:#374151;'>${capitalizeWords(entity)}</th>`).join('')}
             </tr>
           </thead>
           <tbody>
             ${metricKeys.map(key => `
               <tr>
-                <td style='font-weight:600;padding:8px 12px;border-bottom:1px solid #e5e7eb;'>${prettifyLabel(key)}</td>
-                <td style='padding:8px 12px;border-bottom:1px solid #e5e7eb;'>${aFacts[key]?.value ?? '-'}</td>
-                <td style='padding:8px 12px;border-bottom:1px solid #e5e7eb;'>${bFacts[key]?.value ?? '-'}</td>
+                <td style='font-weight:600;padding:8px 12px;border-bottom:1px solid #e5e7eb;'>${prettifyLabelWithUnit(key)}</td>
+                ${entities.map(entity => {
+                  const facts = (results[cat.key]?.[entity.toLowerCase().trim()]?.key_facts || {});
+                  return `<td style='padding:8px 12px;border-bottom:1px solid #e5e7eb;'>${facts[key]?.value ?? '-'}</td>`;
+                }).join('')}
               </tr>
             `).join('')}
           </tbody>
         </table>
-        <div style='display:flex;gap:32px;margin-bottom:16px;'>
-          <div style='flex:1;'>
-            <div style='font-weight:700;color:#374151;margin-bottom:8px;font-size:20px;'>${capitalizeWords(entityA)}</div>
-            <div style='background:#f8fafc;border-radius:8px;padding:16px;min-height:64px;font-size:18px;'>${a.analysis || 'No analysis available.'}</div>
-          </div>
-          <div style='flex:1;'>
-            <div style='font-weight:700;color:#374151;margin-bottom:8px;font-size:20px;'>${capitalizeWords(entityB)}</div>
-            <div style='background:#f8fafc;border-radius:8px;padding:16px;min-height:64px;font-size:18px;'>${b.analysis || 'No analysis available.'}</div>
-          </div>
-        </div>
-        <div style='margin-top:8px;font-size:16px;color:#64748b;'>
-          <div><b>Evidence Quality:</b> ${a.evidence?.quality_rating || '-'} (${a.evidence?.evidence_quality_score || '-'}) <b>Confidence:</b> ${a.confidence || '-'}%</div>
-          <div><b>Reliability Flags:</b> ${a.evidence?.reliability_flags?.join(', ') || '-'}</div>
+        <div style='margin-top:24px;background:#e0e7ff;border-radius:10px;padding:20px;font-size:17px;color:#1e293b;font-style:italic;box-shadow:0 2px 8px rgba(102,126,234,0.08);'>
+          <b>Deeper Insight:</b> ${results[cat.key]?.conclusion || 'This is where a summary or key takeaway for this category will appear.'}
         </div>
       `;
       document.body.appendChild(sectionDiv);
@@ -639,6 +942,7 @@ function App() {
 
       pdf.addImage(imgData, 'JPEG', x, y, pdfWidth, pdfHeight);
       document.body.removeChild(sectionDiv);
+      // Only add a new page if this is NOT the last category
       if (i < categories.length - 1) pdf.addPage();
     }
     pdf.save('HL-Analysis-Report.pdf');
@@ -652,13 +956,13 @@ function App() {
         <div>
           <h1 style={{ margin: 0, fontSize: 28 }}>HL Compare: Analysis Report</h1>
           <div style={{ fontSize: 16, color: '#64748b', marginTop: 4 }}>
-            {new Date().toLocaleDateString()} &nbsp;|&nbsp; {capitalizeWords(entityA)} vs {capitalizeWords(entityB)} &nbsp;|&nbsp; {results?.documents_analyzed || 0} documents analyzed
+            {new Date().toLocaleDateString()} &nbsp;|&nbsp; {capitalizeWords(entities[0])} vs {capitalizeWords(entities[1])} &nbsp;|&nbsp; {results?.documents_analyzed || 0} documents analyzed
           </div>
         </div>
       </div>
       {categories.map((cat) => {
-        const a = results?.[cat.key]?.[entityAKey] || {};
-        const b = results?.[cat.key]?.[entityBKey] || {};
+        const a = results?.[cat.key]?.[entities[0].toLowerCase().trim()] || {};
+        const b = results?.[cat.key]?.[entities[1].toLowerCase().trim()] || {};
         const aFacts = a.key_facts || {};
         const bFacts = b.key_facts || {};
         const metricKeys = Array.from(new Set([...Object.keys(aFacts), ...Object.keys(bFacts)]));
@@ -671,14 +975,14 @@ function App() {
                 <thead>
                   <tr>
                     <th style={{ textAlign: 'left', borderBottom: '2px solid #e5e7eb', padding: '6px 8px', color: '#374151' }}>Metric</th>
-                    <th style={{ textAlign: 'left', borderBottom: '2px solid #e5e7eb', padding: '6px 8px', color: '#374151' }}>{capitalizeWords(entityA)}</th>
-                    <th style={{ textAlign: 'left', borderBottom: '2px solid #e5e7eb', padding: '6px 8px', color: '#374151' }}>{capitalizeWords(entityB)}</th>
+                    <th style={{ textAlign: 'left', borderBottom: '2px solid #e5e7eb', padding: '6px 8px', color: '#374151' }}>{capitalizeWords(entities[0])}</th>
+                    <th style={{ textAlign: 'left', borderBottom: '2px solid #e5e7eb', padding: '6px 8px', color: '#374151' }}>{capitalizeWords(entities[1])}</th>
                   </tr>
                 </thead>
                 <tbody>
                   {metricKeys.map((key) => (
                     <tr key={key}>
-                      <td style={{ fontWeight: 600, padding: '6px 8px', borderBottom: '1px solid #e5e7eb' }}>{prettifyLabel(key)}</td>
+                      <td style={{ fontWeight: 600, padding: '6px 8px', borderBottom: '1px solid #e5e7eb' }}>{prettifyLabelWithUnit(key)}</td>
                       <td style={{ padding: '6px 8px', borderBottom: '1px solid #e5e7eb' }}>{aFacts[key]?.value ?? '-'}</td>
                       <td style={{ padding: '6px 8px', borderBottom: '1px solid #e5e7eb' }}>{bFacts[key]?.value ?? '-'}</td>
                     </tr>
@@ -689,12 +993,12 @@ function App() {
             {/* Analysis Text */}
             <div style={{ display: 'flex', gap: 24 }}>
               <div style={{ flex: 1 }}>
-                <div style={{ fontWeight: 700, color: '#374151', marginBottom: 4 }}>{capitalizeWords(entityA)}</div>
-                <div style={{ background: '#f8fafc', borderRadius: 6, padding: 12, minHeight: 48, fontSize: 15 }} dangerouslySetInnerHTML={{ __html: a.analysis || 'No analysis available.' }} />
+                <div style={{ fontWeight: 700, color: '#374151', marginBottom: 4 }}>{capitalizeWords(entities[0])}</div>
+                <div style={{ background: '#f8fafc', borderRadius: 6, padding: 12, minHeight: 48, fontSize: 15 }} dangerouslySetInnerHTML={{ __html: a.analysis_paragraph || 'No analysis available.' }} />
               </div>
               <div style={{ flex: 1 }}>
-                <div style={{ fontWeight: 700, color: '#374151', marginBottom: 4 }}>{capitalizeWords(entityB)}</div>
-                <div style={{ background: '#f8fafc', borderRadius: 6, padding: 12, minHeight: 48, fontSize: 15 }} dangerouslySetInnerHTML={{ __html: b.analysis || 'No analysis available.' }} />
+                <div style={{ fontWeight: 700, color: '#374151', marginBottom: 4 }}>{capitalizeWords(entities[1])}</div>
+                <div style={{ background: '#f8fafc', borderRadius: 6, padding: 12, minHeight: 48, fontSize: 15 }} dangerouslySetInnerHTML={{ __html: b.analysis_paragraph || 'No analysis available.' }} />
               </div>
             </div>
             {/* Evidence/Confidence */}
@@ -707,6 +1011,26 @@ function App() {
       })}
     </div>
   );
+
+  // Helper to compute overall average confidence
+  const getOverallConfidence = () => {
+    let confidences = [];
+    categories.forEach(cat => {
+      entities.forEach(entity => {
+        const c = results?.[cat.key]?.[entity.toLowerCase().trim()]?.key_facts?.confidence;
+        if (typeof c === 'number') confidences.push(c);
+      });
+    });
+    return confidences.length
+      ? Math.round(confidences.reduce((a, b) => a + b, 0) / confidences.length)
+      : undefined;
+  };
+
+  // Add debug prints in the results table rendering section
+  console.log('Entities:', entities);
+  console.log('Results:', results);
+  // When rendering each row:
+  // console.log('Category:', cat.key, 'Entity:', entity, 'Data:', results[cat.key]?.[entity.toLowerCase().trim()]);
 
   return (
     <div className="app-container">
@@ -733,26 +1057,23 @@ function App() {
             <form onSubmit={handleSubmit} className="upload-form">
               <div className="form-grid">
                 <div className="form-group">
-                  <label htmlFor="entityA">Entity A</label>
-                  <input
-                    type="text"
-                    id="entityA"
-                    value={entityA}
-                    onChange={(e) => setEntityA(e.target.value)}
-                    placeholder="e.g., Apple Inc."
-                    required
-                  />
-                </div>
-                <div className="form-group">
-                  <label htmlFor="entityB">Entity B</label>
-                  <input
-                    type="text"
-                    id="entityB"
-                    value={entityB}
-                    onChange={(e) => setEntityB(e.target.value)}
-                    placeholder="e.g., Microsoft Corp."
-                    required
-                  />
+                  <label>Entities to Compare</label>
+                  {entities.map((entity, idx) => (
+                    <div key={idx} style={{ display: 'flex', alignItems: 'center', marginBottom: 8 }}>
+                      <input
+                        type="text"
+                        value={entity}
+                        onChange={e => handleEntityChange(idx, e.target.value)}
+                        placeholder={`Entity ${idx + 1}`}
+                        required
+                        style={{ flex: 1, marginRight: 8 }}
+                      />
+                      {entities.length > 2 && (
+                        <button type="button" onClick={() => removeEntity(idx)} style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: 20, cursor: 'pointer' }}>×</button>
+                      )}
+                    </div>
+                  ))}
+                  <button type="button" onClick={addEntity} style={{ marginTop: 4, background: '#1976d2', color: '#fff', border: 'none', borderRadius: 6, padding: '6px 14px', fontWeight: 600, cursor: 'pointer' }}>+ Add Entity</button>
                 </div>
               </div>
 
@@ -797,7 +1118,7 @@ function App() {
               <button 
                 type="submit" 
                 className="submit-button"
-                disabled={loading}
+                disabled={!canSubmit || loading}
               >
                 {loading ? '🔄 Analyzing...' : '🚀 Start Analysis'}
               </button>
@@ -836,28 +1157,15 @@ function App() {
               </div>
               <div className="results-meta">
                 <span>📊 {results.documents_analyzed} documents analyzed</span>
-                <span>⚡ {capitalizeWords(entityA)} vs {capitalizeWords(entityB)}</span>
+                <span>⚡ {entities.map(capitalizeWords).join(' vs ')}</span>
               </div>
-            </div>
-
-            {/* Tab/button menu for charts */}
-            <div className="charts-tab-menu">
-              {categories.map((cat) => (
-                <button
-                  key={cat.key}
-                  className={`tab-btn${selectedTab === cat.key ? ' active' : ''}`}
-                  onClick={() => setSelectedTab(cat.key)}
-                >
-                  <span className="category-icon">{cat.icon}</span> {cat.name}
-                </button>
-              ))}
-            </div>
-            <div className="charts-tab-content">
-              <KeyMetricsTable cat={categories.find(c => c.key === selectedTab)} />
+              <span style={{ fontSize: 18, color: '#64748b', fontWeight: 600, marginLeft: 'auto' }}>
+                {getOverallConfidence() !== undefined && `${getOverallConfidence()}% confidence`}
+              </span>
             </div>
 
             {/* Accordion for analysis descriptions */}
-            <Accordion items={getAccordionItems()} />
+            <Accordion items={getAccordionItems()} entities={entities} results={results} formatMetricValue={formatMetricValue} />
           </div>
         )}
       </main>
